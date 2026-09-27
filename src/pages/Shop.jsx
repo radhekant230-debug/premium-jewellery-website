@@ -13,6 +13,7 @@ const sortOptions = [
 
 export default function Shop() {
   const [params, setParams] = useSearchParams()
+  const diamondType = params.get('diamondType')
   const category = params.get('category')
   const collection = params.get('collection')
   const isNew = params.get('new') === '1'
@@ -27,6 +28,7 @@ export default function Shop() {
 
   const filtered = useMemo(() => {
     let list = [...products]
+    if (diamondType) list = list.filter((p) => p.diamondType === diamondType)
     if (category) list = list.filter((p) => p.category === category)
     if (collection) list = list.filter((p) => p.collection === collection)
     if (isNew) list = list.filter((p) => p.isNew)
@@ -34,55 +36,128 @@ export default function Shop() {
     if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
     if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
     return list
-  }, [category, collection, isNew, sort])
+  }, [diamondType, category, collection, isNew, sort])
 
   const activeCollection = collections.find((c) => c.id === collection)
   const activeCategory = categories.find((c) => c.id === category)
 
   const title = isNew
     ? 'New Arrivals'
-    : activeCollection
-      ? activeCollection.name
-      : activeCategory
-        ? activeCategory.name
-        : 'All Jewellery'
+    : diamondType
+      ? (diamondType === 'lab-grown' ? 'Lab-Grown Diamonds' : 'Natural Diamonds')
+      : activeCollection
+        ? activeCollection.name
+        : activeCategory
+          ? activeCategory.name
+          : 'All Jewellery'
+
+  const showMainCategories = !diamondType
+  const showSubcategories = !!diamondType
+  const diamondTypeName = diamondType === 'lab-grown' ? 'Lab-Grown Diamonds' : 'Natural Diamonds'
+
+  const subcategoryOptions = [
+    { id: null, name: 'All' },
+    { id: 'rings', name: 'Rings' },
+    { id: 'necklaces', name: 'Necklaces' },
+    { id: 'earrings', name: 'Earrings' },
+    { id: 'bracelets', name: 'Bracelets' },
+    { id: 'wedding', name: 'Wedding' },
+    { id: 'high-jewellery', name: 'High Jewellery' },
+  ]
+
+  const subcategoryDescriptions = {
+    rings: 'Rings crafted with premium diamond integrity.',
+    necklaces: 'Necklaces featuring exquisite diamond designs.',
+    earrings: 'Earrings showcasing timeless diamond elegance.',
+    bracelets: 'Bracelets with sophisticated diamond craftsmanship.',
+    wedding: 'Wedding collections celebrating love and commitment.',
+    'high-jewellery': 'Exceptional high jewellery pieces of rarity.',
+    null: 'All ' + (diamondType === 'lab-grown' ? 'Lab-Grown' : 'Natural') + ' diamonds.',
+  }
 
   return (
     <>
       <PageHeader
-        eyebrow={activeCollection ? activeCollection.tagline : 'The Collection'}
+        eyebrow={diamondType ? (diamondType === 'lab-grown' ? 'Consciously Luxurious' : 'Naturally Exceptional') : activeCollection ? activeCollection.tagline : 'The Collection'}
         title={title}
-        text={
-          activeCollection
-            ? activeCollection.description
-            : 'Every creation of the Maison, composed in our Paris atelier.'
-        }
+        text={diamondType ? (activeCategory ? subcategoryDescriptions[activeCategory.id] : subcategoryDescriptions.null) : (activeCollection ? activeCollection.description : 'Every creation of the Maison, composed in our Paris atelier.')}
       />
 
       <section className="section container shop-section">
         <div className="shop-toolbar">
           <div className="filter-chips">
-            <button
-              className={`filter-chip ${!category && !collection && !isNew ? 'is-active' : ''}`}
-              onClick={() => setParams(new URLSearchParams(), { replace: true })}
-            >
-              All
-            </button>
-            {categories.map((c) => (
+            {showMainCategories && (
+              <>
+                <button
+                  className={`filter-chip ${!diamondType ? 'is-active' : ''}`}
+                  onClick={() => setParams(new URLSearchParams(), { replace: true })}
+                >
+                  All Jewellery
+                </button>
+                <button
+                  className={`filter-chip ${diamondType === 'lab-grown' ? 'is-active' : ''}`}
+                  onClick={() => setParam('diamondType', 'lab-grown')}
+                >
+                  Lab-Grown Diamonds
+                </button>
+                <button
+                  className={`filter-chip ${diamondType === 'natural' ? 'is-active' : ''}`}
+                  onClick={() => setParam('diamondType', 'natural')}
+                >
+                  Natural Diamonds
+                </button>
+              </>
+            )}
+
+            {showSubcategories && (
+              <>
+                <button
+                  className={`filter-chip ${!category ? 'is-active' : ''}`}
+                  onClick={() => setParam('category', null)}
+                >
+                  All
+                </button>
+                {subcategoryOptions.filter(o => o.id !== null).map((c) => (
+                  <button
+                    key={c.id}
+                    className={`filter-chip ${category === c.id ? 'is-active' : ''}`}
+                    onClick={() => setParam('category', category === c.id ? null : c.id)}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {!showMainCategories && !showSubcategories && (
               <button
-                key={c.id}
-                className={`filter-chip ${category === c.id ? 'is-active' : ''}`}
-                onClick={() => setParam('category', category === c.id ? null : c.id)}
+                className={`filter-chip ${!category && !collection && !isNew ? 'is-active' : ''}`}
+                onClick={() => setParams(new URLSearchParams(), { replace: true })}
               >
-                {c.name}
+                All
               </button>
-            ))}
-            <button
-              className={`filter-chip ${isNew ? 'is-active' : ''}`}
-              onClick={() => setParam('new', isNew ? null : '1')}
-            >
-              New Arrivals
-            </button>
+            )}
+
+            {!showMainCategories && !showSubcategories && (
+              <>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    className={`filter-chip ${category === c.id ? 'is-active' : ''}`}
+                    onClick={() => setParam('category', category === c.id ? null : c.id)}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+
+                <button
+                  className={`filter-chip ${isNew ? 'is-active' : ''}`}
+                  onClick={() => setParam('new', isNew ? null : '1')}
+                >
+                  New Arrivals
+                </button>
+              </>
+            )}
           </div>
 
           <div className="shop-toolbar-right">

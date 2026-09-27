@@ -13,6 +13,11 @@ export default function ProductCard({ product, index = 0 }) {
   const wishlisted = isWishlisted(product.id)
   const categoryName = categories.find((c) => c.id === product.category)?.name
 
+  const isLabGrown = product.diamondType === 'lab-grown'
+  const diamondBadge = product.diamondType ? (
+    isLabGrown ? 'Lab-Grown' : 'Natural'
+  ) : null
+
   return (
     <>
       <motion.article
@@ -28,6 +33,11 @@ export default function ProductCard({ product, index = 0 }) {
           </Link>
 
           {product.isNew && <span className="product-badge">New</span>}
+          {diamondBadge && !product.isNew && (
+            <span className={`product-badge diamond-badge ${isLabGrown ? 'lab-grown' : 'natural'}`}>
+              {diamondBadge}
+            </span>
+          )}
 
           <button
             className={`product-wishlist ${wishlisted ? 'is-active' : ''}`}
@@ -54,7 +64,14 @@ export default function ProductCard({ product, index = 0 }) {
           <Link to={`/product/${product.slug}`}>
             <h3 className="product-card-name">{product.name}</h3>
           </Link>
-          <span className="product-card-category">{categoryName}</span>
+          <div className="product-card-category-row">
+            <span className="product-card-category">{categoryName}</span>
+            {diamondBadge && (
+              <span className={`product-card-diamond ${isLabGrown ? 'lab-grown' : 'natural'}`}>
+                {diamondBadge}
+              </span>
+            )}
+          </div>
           <span className="product-card-price">{formatPrice(product.price)}</span>
         </div>
       </motion.article>
